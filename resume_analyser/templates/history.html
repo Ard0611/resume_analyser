@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}History — ResumeIQ{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Analysis History</h1>
+    <p>All previously analysed resumes. Click any row to view full results.</p>
+  </div>
+</div>
+
+<div class="container">
+  {% if resumes %}
+  <div class="history-table-wrap">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>File Name</th>
+          <th>Status</th>
+          <th>Category</th>
+          <th>Score</th>
+          <th>JD Match</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in resumes %}
+        <tr onclick="window.location='/result/{{ r.id }}/'">
+          <td class="id-col">{{ r.id }}</td>
+          <td class="name-col">{{ r.file_name }}</td>
+          <td>
+            <span class="badge {% if r.status == 'valid' %}badge-valid{% elif r.status == 'invalid' %}badge-invalid{% else %}badge-pending{% endif %}">
+              {{ r.status|capfirst }}
+            </span>
+          </td>
+          <td>{{ r.category|default:"—" }}</td>
+          <td>
+            <div class="score-bar-mini">
+              <span>{{ r.score }}</span>
+              <div class="mini-track"><div class="mini-fill" style="width:{{ r.score }}%"></div></div>
+            </div>
+          </td>
+          <td>{% if r.jd_match_percent > 0 %}{{ r.jd_match_percent }}%{% else %}—{% endif %}</td>
+          <td class="date-col">{{ r.uploaded_at|date:"d M Y" }}</td>
+          <td><span class="view-link">View →</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">◎</div>
+    <h2>No analyses yet</h2>
+    <p>Upload your first resume to get started.</p>
+    <a href="/upload/" class="btn btn-primary">Analyse a Resume →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

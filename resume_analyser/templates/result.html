@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block title %}Analysis Results — ResumeIQ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div class="result-header-row">
+      <div>
+        <div class="breadcrumb"><a href="/upload/">← New Analysis</a></div>
+        <h1>{{ resume.file_name }}</h1>
+        <p>Analysed {{ resume.uploaded_at|date:"d M Y, H:i" }}</p>
+      </div>
+      <div class="status-badge {% if resume.status == 'valid' %}badge-valid{% else %}badge-invalid{% endif %}">
+        {% if resume.status == 'valid' %}✓ Valid Resume{% else %}✗ Invalid{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container results-container">
+
+  {% if resume.status == 'invalid' %}
+  <div class="alert alert-error large-alert">
+    <strong>This document does not appear to be a resume.</strong><br>
+    Please upload a proper resume in PDF or DOCX format.
+  </div>
+  {% else %}
+
+  <!-- Top Stats Row -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Resume Score</div>
+      <div class="stat-value score-value" data-score="{{ resume.score }}">
+        <div class="score-ring">
+          <svg viewBox="0 0 80 80">
+            <circle class="ring-bg" cx="40" cy="40" r="34"/>
+            <circle class="ring-fill" cx="40" cy="40" r="34"
+              stroke-dasharray="213.6"
+              stroke-dashoffset="{{ ring_offset|default:'213.6' }}"
+              id="scoreRing"
+              data-score="{{ resume.score }}"
+            />
+          </svg>
+          <span class="ring-text" id="scoreText">{{ resume.score }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Category</div>
+      <div class="stat-value category-value">
+        <span class="category-tag">{{ resume.category|default:"N/A" }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">JD Match</div>
+      <div class="stat-value">
+        {% if resume.jd_match_percent > 0 %}
+          <div class="match-display">
+            <span class="match-number">{{ resume.jd_match_percent }}%</span>
+            <div class="match-bar-track">
+              <div class="match-bar-fill" style="width: {{ resume.jd_match_percent }}%"></div>
+            </div>
+          </div>
+        {% else %}
+          <span class="no-jd">No JD provided</span>
+          <a href="#jd-section" class="link-small">Add one below ↓</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Skills Found</div>
+      <div class="stat-value big-number">{{ resume.skills_found|length }}</div>
+    </div>
+  </div>
+
+  <!-- Skills & Suggestions -->
+  <div class="detail-grid">
+
+    <div class="detail-card">
+      <h3 class="detail-title">✓ Skills Found</h3>
+      {% if resume.skills_found %}
+        <div class="skills-cloud">
+          {% for skill in resume.skills_found %}
+            <span class="skill-tag skill-found">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No skills detected.</p>
+      {% endif %}
+    </div>
+
+    {% if resume.missing_skills %}
+    <div class="detail-card">
+      <h3 class="detail-title">✗ Missing Skills (from JD)</h3>
+      <div class="skills-cloud">
+        {% for skill in resume.missing_skills %}
+          <span class="skill-tag skill-missing">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if resume.matching_skills %}
+    <div class="detail-card">
+      <h3 class="detail-title">⟳ JD Matching Skills</h3>
+      <div class="skills-cloud">
+        {% for skill in resume.matching_skills %}
+          <span class="skill-tag skill-match">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="detail-card">
+      <h3 class="detail-title">💡 Improvement Suggestions</h3>
+      {% if resume.suggestions %}
+        <ul class="suggestions-list">
+          {% for s in resume.suggestions %}
+            <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No suggestions — your resume looks solid!</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- JD Match Section -->
+  <div class="jd-match-section" id="jd-section">
+    <h2>Match Against a Job Description</h2>
+    <p>Paste a job description below and click Match to get skill analysis.</p>
+    <textarea id="jdInput" class="jd-textarea" rows="8"
+      placeholder="Paste job description here..."></textarea>
+    <button class="btn btn-primary" onclick="runJDMatch()">Match Now →</button>
+    <div id="jdResult" class="jd-result" style="display:none"></div>
+  </div>
+
+  {% endif %}
+
+  <div class="result-footer-actions">
+    <a href="/upload/" class="btn btn-outline">← Analyse Another</a>
+    <a href="/history/" class="btn btn-ghost">View History</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate score ring
+window.addEventListener('load', () => {
+  const ring = document.getElementById('scoreRing');
+  if (!ring) return;
+  const score = parseFloat(ring.dataset.score);
+  const circumference = 213.6;
+  const offset = circumference - (score / 100) * circumference;
+  setTimeout(() => {
+    ring.style.transition = 'stroke-dashoffset 1s ease';
+    ring.style.strokeDashoffset = offset;
+  }, 300);
+
+  // Animate match bar
+  const bars = document.querySelectorAll('.match-bar-fill');
+  bars.forEach(b => {
+    const w = b.style.width;
+    b.style.width = '0';
+    setTimeout(() => {
+      b.style.transition = 'width 1s ease';
+      b.style.width = w;
+    }, 500);
+  });
+});
+
+async function runJDMatch() {
+  const jd = document.getElementById('jdInput').value.trim();
+  if (jd.length < 20) { alert('Please paste a longer job description.'); return; }
+
+  const resumeId = {{ resume.id }};
+  const resultDiv = document.getElementById('jdResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<p class="loading-text">Matching…</p>';
+
+  const res = await fetch('/api/match-jd/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ resume_id: resumeId, job_description: jd })
+  });
+  const data = await res.json();
+
+  if (!res.ok) { resultDiv.innerHTML = `<p class="error">${data.error}</p>`; return; }
+
+  resultDiv.innerHTML = `
+    <div class="jd-result-inner">
+      <div class="jd-stat">
+        <span class="jd-label">Match Score</span>
+        <span class="jd-num ${data.match_percent >= 60 ? 'good' : 'low'}">${data.match_percent}%</span>
+      </div>
+      <div class="jd-skills-row">
+        <div>
+          <strong>✓ Matching Skills</strong>
+          <div class="skills-cloud mt-sm">
+            ${data.matching_skills.length ? data.matching_skills.map(s => `<span class="skill-tag skill-match">${s}</span>`).join('') : '<span class="muted">None</span>'}
+          </div>
+        </div>
+        <div>
+          <strong>✗ Missing Skills</strong>
+          <div class="skills-cloud mt-sm">
+            ${data.missing_skills.length ? data.missing_skills.map(s => `<span class="skill-tag skill-missing">${s}</span>`).join('') : '<span class="muted">None</span>'}
+          </div>
+        </div>
+      </div>
+      <div class="jd-feedback">
+        <strong>💡 Feedback</strong>
+        <ul>${data.feedback.map(f => `<li>${f}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+  // Refresh page to show updated data
+  setTimeout(() => location.reload(), 2000);
+}
+</script>
+{% endblock %}

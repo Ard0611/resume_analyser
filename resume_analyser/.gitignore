@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+*.sqlite3
+*.log
+local_settings.py
+db.sqlite3
+media/
+
+# ML Model (large binary — generate locally)
+# ml_model/resume_classifier.pkl  ← uncomment to exclude from git
+
+# Uploaded Resumes (user data)
+resumes/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# Coverage
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Test files
+test_files/

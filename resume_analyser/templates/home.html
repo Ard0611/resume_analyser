@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}ResumeIQ — AI Resume Analyser{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-badge">◈ Powered by Machine Learning + NLP</div>
+    <h1 class="hero-title">
+      Know exactly how<br>
+      <em>strong</em> your resume is.
+    </h1>
+    <p class="hero-sub">
+      Upload your resume. Get an instant AI-powered analysis — category classification,
+      skills audit, quality score, and job description match in seconds.
+    </p>
+    <div class="hero-actions">
+      <a href="/upload/" class="btn btn-primary">
+        <span>Analyse My Resume</span>
+        <span class="btn-arrow">→</span>
+      </a>
+      <a href="/history/" class="btn btn-ghost">View History</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="card-mock">
+      <div class="mock-header">
+        <span class="mock-dot red"></span>
+        <span class="mock-dot yellow"></span>
+        <span class="mock-dot green"></span>
+        <span class="mock-title">resume_analysis.json</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-line"><span class="key">"status"</span>: <span class="val-green">"valid"</span>,</div>
+        <div class="mock-line"><span class="key">"category"</span>: <span class="val-blue">"Data Science"</span>,</div>
+        <div class="mock-line"><span class="key">"score"</span>: <span class="val-orange">87.5</span>,</div>
+        <div class="mock-line"><span class="key">"jd_match"</span>: <span class="val-orange">74.2</span>,</div>
+        <div class="mock-line"><span class="key">"skills_found"</span>: [</div>
+        <div class="mock-line indent"><span class="val-green">"Python"</span>, <span class="val-green">"TensorFlow"</span>,</div>
+        <div class="mock-line indent"><span class="val-green">"Pandas"</span>, <span class="val-green">"Sql"</span></div>
+        <div class="mock-line">],</div>
+        <div class="mock-line"><span class="key">"missing_skills"</span>: [</div>
+        <div class="mock-line indent"><span class="val-red">"Docker"</span>, <span class="val-red">"Spark"</span></div>
+        <div class="mock-line">]</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <h2 class="section-title">Everything you need to<br>land the right role.</h2>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⬡</div>
+        <h3>Smart Classification</h3>
+        <p>ML model trained on 700+ resumes classifies your resume into Data Science, Web Dev, Finance, HR, and 6 more categories with high accuracy.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◎</div>
+        <h3>Skills Audit</h3>
+        <p>Automatically extracts 50+ technical and soft skills from your resume. See exactly what you have — and what's missing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◈</div>
+        <h3>JD Match Score</h3>
+        <p>Paste any job description. Get a cosine similarity match score, matching skills, missing keywords, and actionable feedback.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">△</div>
+        <h3>Quality Score</h3>
+        <p>Get a 0–100 resume quality score based on depth, skill coverage, section completeness, and measurable impact.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">▷</div>
+        <h3>NLP Pipeline</h3>
+        <p>Full preprocessing: tokenisation, stopword removal, TF-IDF vectorisation — built on NLTK for accurate text understanding.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◻</div>
+        <h3>Full History</h3>
+        <p>Every analysis is saved. Browse your history, compare scores over time, and track your resume improvements.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Ready to see your resume score?</h2>
+      <p>Upload your PDF or DOCX — analysis takes under 5 seconds.</p>
+      <a href="/upload/" class="btn btn-primary">Start Analysing →</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

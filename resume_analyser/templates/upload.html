@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Upload Resume — ResumeIQ{% endblock %}
+{% block nav_upload %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Analyse Your Resume</h1>
+    <p>Upload a PDF or DOCX file. Optionally paste a job description for match scoring.</p>
+  </div>
+</div>
+
+<div class="container upload-container">
+  <div class="upload-grid">
+
+    <!-- Upload Zone -->
+    <div class="upload-card">
+      <h2 class="card-title">① Upload Resume</h2>
+
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">⬆</div>
+        <p class="drop-title">Drop your resume here</p>
+        <p class="drop-sub">PDF or DOCX · Max 5MB</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx" hidden>
+        <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
+          Browse Files
+        </button>
+      </div>
+
+      <div class="file-preview" id="filePreview" style="display:none">
+        <div class="file-info">
+          <span class="file-icon">📄</span>
+          <div>
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+          </div>
+          <button class="remove-btn" onclick="removeFile()">✕</button>
+        </div>
+      </div>
+
+      <div id="uploadError" class="alert alert-error" style="display:none"></div>
+    </div>
+
+    <!-- JD Section -->
+    <div class="upload-card">
+      <h2 class="card-title">② Job Description <span class="optional">(Optional)</span></h2>
+      <p class="card-desc">Paste the job description to get a match percentage and missing skills.</p>
+      <textarea
+        id="jdText"
+        class="jd-textarea"
+        placeholder="Paste the job description here...&#10;&#10;Example: We are looking for a Python Developer with experience in Django, REST APIs, PostgreSQL..."
+        rows="10"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="analyse-actions">
+    <button class="btn btn-primary btn-large" id="analyseBtn" onclick="startAnalysis()" disabled>
+      <span id="btnText">Analyse Resume</span>
+      <span class="btn-arrow" id="btnArrow">→</span>
+    </button>
+    <p class="analyse-note">Analysis typically completes in 2–5 seconds</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-container" id="progressContainer" style="display:none">
+    <div class="progress-steps">
+      <div class="step" id="step1"><span class="step-icon">⬆</span> Uploading file</div>
+      <div class="step" id="step2"><span class="step-icon">◎</span> Extracting text</div>
+      <div class="step" id="step3"><span class="step-icon">⬡</span> Classifying resume</div>
+      <div class="step" id="step4"><span class="step-icon">◈</span> Matching JD</div>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+const analyseBtn = document.getElementById('analyseBtn');
+let selectedFile = null;
+
+// Drag and drop
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf', 'docx'].includes(ext)) {
+    showError('Only PDF and DOCX files are accepted.');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showError('File size must be under 5MB.');
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  dropZone.style.display = 'none';
+  filePreview.style.display = 'block';
+  analyseBtn.disabled = false;
+  hideError();
+}
+
+function removeFile() {
+  selectedFile = null;
+  fileInput.value = '';
+  dropZone.style.display = 'flex';
+  filePreview.style.display = 'none';
+  analyseBtn.disabled = true;
+}
+
+function showError(msg) {
+  const el = document.getElementById('uploadError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('uploadError').style.display = 'none';
+}
+
+function setStep(n) {
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.toggle('active', i < n);
+    s.classList.toggle('done', i < n - 1);
+  });
+  document.getElementById('progressFill').style.width = (n * 25) + '%';
+}
+
+async function startAnalysis() {
+  if (!selectedFile) return;
+
+  analyseBtn.disabled = true;
+  document.getElementById('btnText').textContent = 'Analysing...';
+  document.getElementById('btnArrow').textContent = '⟳';
+  document.getElementById('progressContainer').style.display = 'block';
+
+  const jdText = document.getElementById('jdText').value.trim();
+
+  // Step 1: Upload
+  setStep(1);
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  let uploadRes;
+  try {
+    const res = await fetch('/api/upload/', { method: 'POST', body: formData });
+    uploadRes = await res.json();
+    if (!res.ok) { showError(uploadRes.error || 'Upload failed.'); resetBtn(); return; }
+  } catch(e) { showError('Network error during upload.'); resetBtn(); return; }
+
+  const resumeId = uploadRes.resume_id;
+
+  // Step 2 & 3: Analyse
+  setStep(2);
+  await new Promise(r => setTimeout(r, 400));
+  setStep(3);
+
+  let analyseRes;
+  try {
+    const res = await fetch('/api/analyze/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ resume_id: resumeId })
+    });
+    analyseRes = await res.json();
+    if (!res.ok) { showError(analyseRes.error || 'Analysis failed.'); resetBtn(); return; }
+  } catch(e) { showError('Analysis error.'); resetBtn(); return; }
+
+  // Step 4: JD Match (if provided)
+  setStep(4);
+  if (jdText.length > 20) {
+    try {
+      await fetch('/api/match-jd/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ resume_id: resumeId, job_description: jdText })
+      });
+    } catch(e) { /* non-critical */ }
+  }
+
+  await new Promise(r => setTimeout(r, 300));
+  window.location.href = `/result/${resumeId}/`;
+}
+
+function resetBtn() {
+  analyseBtn.disabled = false;
+  document.getElementById('btnText').textContent = 'Analyse Resume';
+  document.getElementById('btnArrow').textContent = '→';
+  document.getElementById('progressContainer').style.display = 'none';
+}
+</script>
+{% endblock %}
