@@ -156,39 +156,6 @@ curl -X POST http://127.0.0.1:8000/api/match-jd/ \
   -d '{"resume_id": 1, "job_description": "We need a Python Django developer..."}'
 ```
 
----
-
-## GitHub Upload
-
-### 1. Create repository on GitHub
-1. Go to [github.com](https://github.com) → **New Repository**
-2. Name it `resume_analyser`
-3. Keep it Public, do NOT initialise with README
-4. Click **Create Repository**
-
-### 2. Push code
-
-```bash
-git init
-git add .
-git commit -m "Initial commit — ResumeIQ AI Resume Analyser"
-git branch -M main
-git remote add origin https://github.com/yourusername/resume_analyser.git
-git push -u origin main
-```
-
----
-
-## Web Pages
-
-| URL | Page |
-|-----|------|
-| `/` | Home — project intro + CTA |
-| `/upload/` | Upload resume + optional JD |
-| `/result/<id>/` | Full results dashboard |
-| `/history/` | All past analyses |
-
----
 
 ## License
 
